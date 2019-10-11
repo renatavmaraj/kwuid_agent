@@ -1,42 +1,33 @@
 const faker = require('faker');
 const fs = require('fs');
-const jsonfile = require('jsonfile')
-const csv = require('csv-parser'); 
 
-let final = new Array();
+fs.readFile('./perftest-agents.csv', 'utf8', (err, data) => {
+    if (err) process.exit(1);
+    const [headers, ...rows] = data.split('\n');
 
-fs.createReadStream('./perftest-agents.csv')
-.pipe(csv())
-.on('data', function(row){
-    try {
-        final.push(generateAgent(row));
-    }
-    catch(err) {
-        //error handler
-        console.log("ERR",err)
-    }
-})
-.on('end',function(){
-    //some final operation
-    jsonfile.writeFileSync('./agents.json', final, { flag: 'a', spaces: 2 })
-});  
+    // remove the last line
+    rows.pop();
 
-let KWUID_VALUE, FIRST_NAME, LAST_NAME, LANDLINE_NUMBER, MOBILE_NUMBER;
-let FULL_NAME_LOWERCASE, CITY_LOWER_CASE, AVATAR, UPA_ID;
+    const result = rows.map(row => {
+        const [kw_uid, firstName, lastName, username, password] = row.split(',');
+        return JSON.stringify(generateAgent({ kw_uid, firstName, lastName, username, password }), null, 4);
+    });
+    
+    fs.writeFile('agents.json', result, (err) => {
+        if (err) process.exit(1);
+        console.log('All done!');
+    });
+}); 
 
-let agentModel = {
+const agentModel = {
     "foreignKeys": [
         {
             "key": "kwuid",
-            "value": KWUID_VALUE
         }
     ],
     "@type": "profile.agent",
     "changes": {},
     "extraction": {
-        "firstName": FIRST_NAME,
-        "lastName": LAST_NAME,
-        "kwuid": KWUID_VALUE,
         "startDate": "1988-06-20T12:06:00Z",
         "numberOfSales": null,
         "bio": null,
@@ -44,16 +35,11 @@ let agentModel = {
         "contactMethods": [
             {
                 "method": "LANDLINE",
-                "value": LANDLINE_NUMBER
             },
             {
                 "method": "MOBILE",
-                "value": MOBILE_NUMBER
             }
-        ],
-        "fullnameLowerCase": FULL_NAME_LOWERCASE,
-        "cityLowerCase": CITY_LOWER_CASE,
-        "avatar": AVATAR
+        ]
     },
     "facet": [
         {
@@ -65,14 +51,12 @@ let agentModel = {
             "CITY": null,
             "STATE": null
         }
-    ],
-    "id": `UPA-${UPA_ID}`
+    ]
 };
 
-
 function generateAgent(row) {
-    let person = { ...agentModel }
-    person['foreignKeys'][0]['value']= row.kw_uid;
+    const person = { ...agentModel }
+    person['foreignKeys'][0]['value'] = row.kw_uid;
     person['extraction']['firstName']= row.firstName ? row.firstName : faker.name.firstName();
     person['extraction']['lastName'] = row.lastName ? row.lastName : faker.name.lastName();
     person['extraction']['kwuid'] = row.kw_uid;
