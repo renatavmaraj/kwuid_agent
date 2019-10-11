@@ -9,8 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "csv-parser": "^2.3.1",
-    "faker": "^4.1.0",
-    "jsonfile": "^5.0.0"
+    "faker": "^4.1.0"
   }
 }
